@@ -22,7 +22,7 @@ void Process::Pid(int pid)
     this->pid = pid;
 }
 
-float Process::CpuUtilization() 
+float Process::CpuUtilization() const
 { 
     float uptime = 0;
     std::ifstream filestream(LinuxParser::kProcDirectory + LinuxParser::kUptimeFilename);
@@ -34,7 +34,11 @@ float Process::CpuUtilization()
         uptime = std::stof(s);
     }
 
-    long int utime = 0, stime = 0, cutime = 0, cstime = 0, starttime = 0;
+    long int utime = 0,
+             stime = 0,
+             cutime = 0,
+             cstime = 0,
+             starttime = 0;
     filestream.open(LinuxParser::kProcDirectory + to_string(pid) + LinuxParser::kStatFilename);
     if (filestream.is_open())
     {
@@ -71,27 +75,28 @@ float Process::CpuUtilization()
 
     //     Next we get the total elapsed time in seconds since the process started:
     //     seconds = uptime - (starttime / Hertz)
-    float seconds = uptime - (starttime / sysconf(_SC_CLK_TCK));
+    float seconds = uptime - (static_cast<float>(starttime) / sysconf(_SC_CLK_TCK));
 
     //     Finally we calculate the CPU usage percentage:
     //     cpu_usage = 100 * ((total_time / Hertz) / seconds)
-    
-    return 100 * ((totalTime / sysconf(_SC_CLK_TCK)) / seconds); 
+    return 100*static_cast<float>(totalTime / sysconf(_SC_CLK_TCK)) / seconds; 
 }
 
-string Process::Command() 
+string Process::Command()
 { 
-    string cmd{""};
-    std::ifstream filestream(LinuxParser::kProcDirectory + to_string(pid) + LinuxParser::kCmdlineFilename);
-    if (filestream.is_open())
+    if (cmd.empty())
     {
-        filestream >> cmd;
-        filestream.close();
+        std::ifstream filestream(LinuxParser::kProcDirectory + to_string(pid) + LinuxParser::kCmdlineFilename);
+        if (filestream.is_open())
+        {
+            filestream >> cmd;
+            filestream.close();
+        }
     }
     return cmd;
 }
 
-string Process::Ram() 
+string Process::Ram()
 { 
     string vmsize{""};
     std::ifstream filestream(LinuxParser::kProcDirectory + to_string(pid) + LinuxParser::kStatusFilename);
@@ -112,23 +117,31 @@ string Process::Ram()
         }
     }
 
+    ram = std::stol(vmsize);
     return vmsize;
 }
 
-string Process::User() 
-{ 
-    string user{""};
-    std::ifstream filestream(LinuxParser::kProcDirectory + to_string(pid) + LinuxParser::kStatusFilename);
+long Process::LastRam() const
+{
+    return ram;
+}
 
-    if (filestream.is_open())
+string Process::User()
+{ 
+    if (user.empty())
     {
-        filestream >> user >> user;
-        filestream.close();
+        std::ifstream filestream(LinuxParser::kProcDirectory + to_string(pid) + LinuxParser::kStatusFilename);
+
+        if (filestream.is_open())
+        {
+            filestream >> user >> user;
+            filestream.close();
+        }
     }
     return user;
 }
 
-long int Process::UpTime() 
+long int Process::UpTime() const
 { 
     long int uptime = 0;
     std::ifstream filestream(LinuxParser::kProcDirectory + to_string(pid) + LinuxParser::kStatFilename);
@@ -147,6 +160,7 @@ long int Process::UpTime()
     return uptime; 
 }
 
-// TODO: Overload the "less than" comparison operator for Process objects
-// REMOVE: [[maybe_unused]] once you define the function
-bool Process::operator<(Process const& a[[maybe_unused]]) const { return true; }
+bool Process::operator<(Process const& a) const 
+{ 
+    return LastRam() > a.LastRam(); 
+}

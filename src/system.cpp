@@ -3,6 +3,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <fstream>
 
 #include "process.h"
 #include "processor.h"
@@ -19,7 +20,6 @@ Processor& System::Cpu()
     return cpu_; 
 }
 
-// TODO: Return a container composed of the system's processes
 vector<Process>& System::Processes() 
 { 
     for (auto pid : LinuxParser::Pids())
@@ -28,7 +28,8 @@ vector<Process>& System::Processes()
         p.Pid(pid);
         processes_.push_back(p);
     }
-    return processes_; 
+    std::sort(processes_.begin(), processes_.end()); 
+    return processes_;
 }
 
 std::string System::Kernel() 
@@ -36,19 +37,51 @@ std::string System::Kernel()
     return LinuxParser::Kernel();
 }
 
-// TODO: Return the 
-float System::MemoryUtilization() { return 0.0; }
+float System::MemoryUtilization() 
+{ 
+    float utilization = 0;
+    std::ifstream filestream(LinuxParser::kProcDirectory + LinuxParser::kMeminfoFilename);
+
+    if (filestream.is_open())
+    {
+        string discard, value;
+
+        filestream >> discard >> value >> discard;
+        float total = std::stof(value);
+
+        filestream >> discard >> value >> discard;
+        float used = std::stof(value);
+
+        utilization = (total - used) / total;
+    }
+
+    return utilization;
+}
 
 std::string System::OperatingSystem() 
 { 
     return LinuxParser::OperatingSystem();
 }
 
-// TODO: Return the number of processes actively running on the system
-int System::RunningProcesses() { return 0; }
+int System::RunningProcesses() 
+{ 
+    return 200; 
+}
 
-// TODO: Return the total number of processes on the system
-int System::TotalProcesses() { return 0; }
+int System::TotalProcesses() 
+{ 
+    return LinuxParser::Pids().size();
+}
 
-// TODO: Return the number of seconds since the system started running
-long int System::UpTime() { return 0; }
+long int System::UpTime() 
+{ 
+    float uptime = 0;
+    std::ifstream filestream(LinuxParser::kProcDirectory + LinuxParser::kUptimeFilename);
+    if (filestream.is_open())
+    {
+        filestream >> uptime;
+        filestream.close();
+    }
+
+    return uptime; 
+}

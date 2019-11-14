@@ -3,23 +3,28 @@
 
 #include <string>
 /*
-Basic class for Process representation
-It contains relevant attributes as shown below
-*/
+   Basic class for Process representation
+   It contains relevant attributes as shown below
+   */
 class Process {
- public:
-  int Pid();
-  std::string User();
-  std::string Command();
-  float CpuUtilization();
-  std::string Ram();
-  long int UpTime();
-  bool operator<(Process const& a) const;  // TODO: See src/process.cpp
-  void Pid(int pid);
+    public:
+        int Pid();
+        std::string User();
+        std::string Command();
+        float CpuUtilization() const;
+        std::string Ram();
+        long int UpTime() const;
+        bool operator<(Process const& a) const;
+        void Pid(int pid);
 
-  
- private:
-  int pid;
+        long LastRam() const;
+
+    private:
+        int pid;
+        std::string cmd{""};
+        std::string user{""};
+        long ram{0};
+        
 };
 
 #endif
