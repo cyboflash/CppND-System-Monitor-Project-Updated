@@ -38,24 +38,8 @@ std::string System::Kernel()
 }
 
 float System::MemoryUtilization() 
-{ 
-    float utilization = 0;
-    std::ifstream filestream(LinuxParser::kProcDirectory + LinuxParser::kMeminfoFilename);
-
-    if (filestream.is_open())
-    {
-        string discard, value;
-
-        filestream >> discard >> value >> discard;
-        float total = std::stof(value);
-
-        filestream >> discard >> value >> discard;
-        float used = std::stof(value);
-
-        utilization = (total - used) / total;
-    }
-
-    return utilization;
+{
+    return LinuxParser::MemoryUtilization();
 }
 
 std::string System::OperatingSystem() 
@@ -65,23 +49,15 @@ std::string System::OperatingSystem()
 
 int System::RunningProcesses() 
 { 
-    return 200; 
+    return LinuxParser::RunningProcesses();
 }
 
 int System::TotalProcesses() 
 { 
-    return LinuxParser::Pids().size();
+    return LinuxParser::TotalProcesses();
 }
 
 long int System::UpTime() 
 { 
-    float uptime = 0;
-    std::ifstream filestream(LinuxParser::kProcDirectory + LinuxParser::kUptimeFilename);
-    if (filestream.is_open())
-    {
-        filestream >> uptime;
-        filestream.close();
-    }
-
-    return uptime; 
+    return LinuxParser::UpTime();
 }

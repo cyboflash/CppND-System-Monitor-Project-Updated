@@ -58,7 +58,7 @@ float Process::CpuUtilization() const
                 case 16: cutime    = stol(s); break;
                 case 17: cstime    = stol(s); break;
                 case 22: starttime = stol(s); break;
-                default: break;
+                default: /* do nothing */     break;
             }
         }
     }
@@ -84,39 +84,17 @@ float Process::CpuUtilization() const
 
 string Process::Command()
 { 
+    string cmd{""};
     if (cmd.empty())
     {
-        std::ifstream filestream(LinuxParser::kProcDirectory + to_string(pid) + LinuxParser::kCmdlineFilename);
-        if (filestream.is_open())
-        {
-            filestream >> cmd;
-            filestream.close();
-        }
+        cmd = LinuxParser::Command(pid);
     }
     return cmd;
 }
 
 string Process::Ram()
 { 
-    string vmsize{""};
-    std::ifstream filestream(LinuxParser::kProcDirectory + to_string(pid) + LinuxParser::kStatusFilename);
-
-    if (filestream.is_open())
-    {
-        string line, key;
-        while(std::getline(filestream, line))
-        {
-            std::istringstream linestream(line);
-            linestream >> key >> vmsize;
-            if ("VmSize:" == key)
-            {
-                filestream.close();
-                vmsize = to_string(std::stof(vmsize)/1000);
-                break;
-            }
-        }
-    }
-
+    string vmsize{LinuxParser::Ram(pid)};
     ram = std::stol(vmsize);
     return vmsize;
 }
@@ -130,34 +108,14 @@ string Process::User()
 { 
     if (user.empty())
     {
-        std::ifstream filestream(LinuxParser::kProcDirectory + to_string(pid) + LinuxParser::kStatusFilename);
-
-        if (filestream.is_open())
-        {
-            filestream >> user >> user;
-            filestream.close();
-        }
+        user = LinuxParser::User(pid);
     }
     return user;
 }
 
 long int Process::UpTime() const
-{ 
-    long int uptime = 0;
-    std::ifstream filestream(LinuxParser::kProcDirectory + to_string(pid) + LinuxParser::kStatFilename);
-    if (filestream.is_open())
-    {
-        string s{""};
-        // 22nd item in a line is uptime in clock ticks
-        for (unsigned i = 0; i < 22; i++)
-            filestream >> s;
-
-        filestream.close();
-
-        // convert uptime from clock ticks to seconds
-        uptime = (std::stol(s))/sysconf(_SC_CLK_TCK);
-    }
-    return uptime; 
+{
+    return LinuxParser::UpTime(pid);
 }
 
 bool Process::operator<(Process const& a) const 
